@@ -1,0 +1,4 @@
+config.pl
+state/
+logs/
+*.pdf

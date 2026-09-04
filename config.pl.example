@@ -1,0 +1,25 @@
+use strict;
+use warnings;
+
+# Copy this file to config.pl and fill in your values.
+# Get client_id / client_secret from the Shopify Dev Dashboard
+# (dev.shopify.com -> Apps -> your app -> Settings -> Client ID / Client secret).
+# read_orders must be enabled as a scope on the app's current version.
+return {
+    shop_domain   => 'your-shop-name.myshopify.com',
+    client_id     => 'REPLACE_WITH_CLIENT_ID',
+    client_secret => 'REPLACE_WITH_CLIENT_SECRET',
+    api_version   => '2026-07',
+
+    printer_name  => 'MUNBYN_ITPP941AP_4f12',
+
+    # GraphQL search query selecting which orders should print.
+    order_query   => 'financial_status:paid fulfillment_status:unfulfilled',
+
+    poll_seconds  => 120,   # informational only; actual interval is set by launchd
+
+    show_sku      => 0,     # print each line item's SKU under its title
+
+    store_name    => 'MAS Effects',
+    logo_path     => "$FindBin::Bin/assets/logo-horizontal.png",
+};
