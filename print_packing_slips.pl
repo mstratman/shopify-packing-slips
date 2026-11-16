@@ -93,6 +93,9 @@ query PackingSlipOrders($search: String!) {
         name
         createdAt
         note
+        customer {
+          numberOfOrders
+        }
         shippingLine {
           title
         }
@@ -113,6 +116,10 @@ query PackingSlipOrders($search: String!) {
               quantity
               sku
               variantTitle
+              customAttributes {
+                key
+                value
+              }
             }
           }
         }
@@ -200,6 +207,12 @@ sub start_slip_page {
         my ($date) = $order->{createdAt} =~ /^(\S+)T/;
         draw_text($page, $font, 9, $MARGIN, $y, "Date: $date");
         $y -= 16;
+
+        my $num_orders = $order->{customer} && $order->{customer}{numberOfOrders};
+        if (defined $num_orders && length $num_orders) {
+            draw_text($page, $font, 9, $MARGIN, $y, "Orders: $num_orders");
+            $y -= 16;
+        }
     }
     else {
         draw_text($page, $font_bold, 12, $MARGIN, $y, "Order $order->{name} (cont'd, label $page_num)");
@@ -283,7 +296,18 @@ sub build_packing_slip_pdf {
         my @wrapped = wrap_text($label, 40);
 
         my $has_sku  = $CONFIG->{show_sku} && $item->{sku} && length $item->{sku};
-        my $needed_h = 11 * scalar(@wrapped) + ($has_sku ? 11 : 0) + 3;
+
+        # Customer-entered options (e.g. from Globo Product Options). Keys starting
+        # with "_" are hidden/internal bookkeeping and are not printed.
+        my @prop_lines;
+        for my $attr (@{ $item->{customAttributes} || [] }) {
+            my ($k, $v) = ($attr->{key}, $attr->{value});
+            next unless defined $k && length $k && $k !~ /^_/;
+            next unless defined $v && length $v;
+            push @prop_lines, wrap_text_hard("$k: $v", 48);
+        }
+
+        my $needed_h = 11 * scalar(@wrapped) + ($has_sku ? 11 : 0) + 10 * scalar(@prop_lines) + 3;
 
         if ($y - $needed_h < $BOTTOM) {
             finish_slip_page_continued($page, $font);
@@ -306,6 +330,11 @@ sub build_packing_slip_pdf {
         if ($has_sku) {
             draw_text($page, $font, 7, $MARGIN + 30, $y, "SKU: $item->{sku}", color => '#555555');
             $y -= 11;
+        }
+
+        for my $pl (@prop_lines) {
+            draw_text($page, $font, 7.5, $MARGIN + 30, $y, $pl, color => '#333333');
+            $y -= 10;
         }
         $y -= 3;
     }
@@ -360,6 +389,19 @@ sub wrap_text {
     }
     push @lines, $cur if length $cur;
     return @lines;
+}
+
+# Like wrap_text, but also breaks words longer than the width.
+sub wrap_text_hard {
+    my ($str, $width) = @_;
+    my @out;
+    for my $line (wrap_text($str, $width)) {
+        while (length($line) > $width) {
+            push @out, substr($line, 0, $width, '');
+        }
+        push @out, $line if length $line;
+    }
+    return @out;
 }
 
 sub print_pdf {

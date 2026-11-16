@@ -4,7 +4,7 @@ use warnings;
 # Copy this file to config.pl and fill in your values.
 # Get client_id / client_secret from the Shopify Dev Dashboard
 # (dev.shopify.com -> Apps -> your app -> Settings -> Client ID / Client secret).
-# read_orders must be enabled as a scope on the app's current version.
+# read_orders and read_customers must be enabled as scopes on the app's current version.
 return {
     shop_domain   => 'your-shop-name.myshopify.com',
     client_id     => 'REPLACE_WITH_CLIENT_ID',
